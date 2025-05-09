@@ -1,0 +1,49 @@
+FROM nvidia/cuda:11.3.1-devel-ubuntu20.04
+
+# Set environment variables
+ENV HOME=/root
+ENV PATH=/miniconda/bin:${PATH}
+
+# Update and install dependencies
+RUN apt-get update && apt-get install -yq \
+    zsh \
+    curl \
+    vim \
+    git \
+    && apt-get clean
+
+# Install Oh My Zsh
+RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)" || true \
+    && chsh -s /bin/zsh
+SHELL ["/bin/zsh", "-c"]
+
+# Install Miniconda
+ARG CONDA_VER=latest
+ARG PLATFORM=Linux
+ARG OS_TYPE=x86_64
+RUN curl -LO "http://repo.continuum.io/miniconda/Miniconda3-${CONDA_VER}-Linux-${OS_TYPE}.sh" \
+    && bash Miniconda3-${CONDA_VER}-Linux-${OS_TYPE}.sh -p /miniconda -b \
+    && rm Miniconda3-${CONDA_VER}-Linux-${OS_TYPE}.sh
+
+# Initialize Conda for zsh
+RUN source /miniconda/etc/profile.d/conda.sh && conda init zsh
+
+# Set working directory
+WORKDIR $HOME
+
+# Copy and execute setup script using sh
+COPY boltz-installer.sh $HOME/boltz-installer.sh
+RUN chmod +x $HOME/boltz-installer.sh && zsh $HOME/boltz-installer.sh
+
+# Install Python dependencies
+RUN pip install --no-cache-dir ipython \
+    torch \
+    pytorch_lightning
+
+# Set working directory
+WORKDIR $HOME
+
+COPY . $HOME
+
+# Set default shell to bash
+CMD ["bash"]
