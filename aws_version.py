@@ -56,8 +56,11 @@ def preload_model():
     except Exception as e:
         logging.exception(f"Unexpected error during model preload: {e}")
 
-def main(s3_input_key, s3_output_key):
-    download_from_s3(TMP_INPUT, BUCKET_NAME, s3_input_key)
+def main(s3_input_key, s3_output_key, s3_bucket):
+    if not s3_input_key or not s3_bucket or not s3_output_key:
+        raise ValueError("Environment variables INPUT and BUCKET and OUTPUT must be set. Ensure they are correctly configured.")
+
+    download_from_s3(TMP_INPUT, s3_bucket, s3_input_key)
 
     if not os.path.exists(TMP_INPUT):
         logging.error(f"❌ Input file not found: {TMP_INPUT}")
@@ -79,14 +82,14 @@ def main(s3_input_key, s3_output_key):
 
         result = run_fold(fasta_path)
         if result.returncode != 0:
-            logging.error("❌ Fold error:")
+            logging.error(f"❌ Fold failed with exit code {result.returncode}")
             logging.error(f"stdout:\n{result.stdout}")
             logging.error(f"stderr:\n{result.stderr}")
             sys.exit(1)
 
         logging.info(f"Fold completed:\n{result.stdout}")
         output_pdb = os.path.join(OUTPUT_DIR, f"boltz_results_{jobname}/predictions/{jobname}/{jobname}_model_0.pdb")
-        upload_to_s3(output_pdb, BUCKET_NAME, s3_output_key)
+        upload_to_s3(output_pdb, s3_bucket, s3_output_key)
 
     except Exception as e:
         logging.exception(f"❌ Unexpected error during main execution: {e}")
@@ -94,7 +97,7 @@ def main(s3_input_key, s3_output_key):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python aws_version.py <s3_input_path> <s3_output_path>")
+        print("Usage: python aws_version.py <s3_input_path> <s3_output_path>  <BUCKET>")
         sys.exit(1)
 
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else BUCKET_NAME )
