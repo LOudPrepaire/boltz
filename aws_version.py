@@ -19,12 +19,12 @@ BUCKET_NAME = "clicktromics"
 
 def download_from_s3(local_file, bucket, object_key):
     s3 = boto3.client('s3')
-    logging.info(f"⬇️  Downloading s3://{bucket}/{object_key} to {local_file}")
+    logging.info(f"Downloading s3://{bucket}/{object_key} to {local_file}")
     s3.download_file(bucket, object_key, local_file)
 
 def upload_to_s3(local_file, bucket, object_key):
     s3 = boto3.client('s3')
-    logging.info(f"⬆️  Uploading {local_file} to s3://{bucket}/{object_key}")
+    logging.info(f"Uploading {local_file} to s3://{bucket}/{object_key}")
     s3.upload_file(local_file, bucket, object_key)
 
 def run_fold(fasta_path: str) -> subprocess.CompletedProcess:
@@ -34,12 +34,12 @@ def run_fold(fasta_path: str) -> subprocess.CompletedProcess:
         "--use_msa_server", "--output_format", "pdb",
         "--override", "--out_dir", OUTPUT_DIR
     ]
-    logging.info(f"🚀 Running BoltzFold for {fasta_path}")
+    logging.info(f"Running BoltzFold for {fasta_path}")
     return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
 def preload_model():
     """Runs model folding once to warm up the model container."""
-    logging.info("🔥 Preloading model to warm up prediction engine...")
+    logging.info("Preloading model to warm up prediction engine...")
     init = initializer.seq_to_fasta()
     fasta_path = init.get('fasta_path')
 
@@ -52,7 +52,7 @@ def preload_model():
         if result.returncode != 0:
             logging.warning(f"Model warm-up failed:\n{result.stderr}")
         else:
-            logging.info("✅ Model warm-up successful.")
+            logging.info("Model warm-up successful.")
     except Exception as e:
         logging.exception(f"Unexpected error during model preload: {e}")
 
@@ -72,17 +72,19 @@ def main(s3_input_key, s3_output_key):
             logging.error("No sequences found in input file.")
             sys.exit(1)
 
-        logging.info(f"📜 Using sequences: {sequences}")
+        logging.info(f" Using sequences: {sequences}")
         init = initializer.seq_to_fasta(sequences)
         jobname = init.get("jobname")
         fasta_path = init.get("fasta_path")
 
         result = run_fold(fasta_path)
         if result.returncode != 0:
-            logging.error(f"❌ Fold error:\n{result.stderr}")
+            logging.error("❌ Fold error:")
+            logging.error(f"stdout:\n{result.stdout}")
+            logging.error(f"stderr:\n{result.stderr}")
             sys.exit(1)
 
-        logging.info(f"✅ Fold completed:\n{result.stdout}")
+        logging.info(f"Fold completed:\n{result.stdout}")
         output_pdb = os.path.join(OUTPUT_DIR, f"boltz_results_{jobname}/predictions/{jobname}/{jobname}_model_0.pdb")
         upload_to_s3(output_pdb, BUCKET_NAME, s3_output_key)
 
@@ -95,5 +97,4 @@ if __name__ == "__main__":
         print("Usage: python aws_version.py <s3_input_path> <s3_output_path>")
         sys.exit(1)
 
-    preload_model()
     main(sys.argv[1], sys.argv[2])
