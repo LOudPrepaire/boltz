@@ -15,7 +15,6 @@ logging.basicConfig(
 # Constants
 TMP_INPUT = "/tmp/input.json"
 OUTPUT_DIR = "./output/"
-BUCKET_NAME = "clicktromics"
 
 def download_from_s3(local_file, bucket, object_key):
     s3 = boto3.client('s3')
@@ -96,8 +95,8 @@ def main(s3_input_key, s3_output_key, s3_bucket):
         sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 4:
         print("Usage: python aws_version.py <s3_input_path> <s3_output_path>  <BUCKET>")
         sys.exit(1)
 
-    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else BUCKET_NAME )
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
