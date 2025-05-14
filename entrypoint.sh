@@ -5,7 +5,7 @@ nvidia-smi
 echo "CWD: $(pwd)"
 
 echo "Environment vars:"
-env | grep -E 'INPUT|OUTPUT'
+env | grep -E 'INPUT|OUTPUT|BUCKET'
 
 
 echo "Listing /workspace:"
@@ -19,4 +19,4 @@ fi
 
 echo "boltz found: $(which boltz)"
 echo "Running BoltzFold prediction"
-python3 aws_version.py "$INPUT" "$OUTPUT"
+python3 aws_version.py "$INPUT" "$OUTPUT" "$BUCKET"

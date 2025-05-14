@@ -1,0 +1,14 @@
+FROM loudprepaire/boltz-api:latest
+
+RUN pip install boto3
+
+COPY aws_version.py /workspace/aws_version.py
+COPY entrypoint.sh /workspace/_entrypoint.sh
+
+WORKDIR /workspace
+
+# Make the entrypoint script executable
+RUN chmod +x /workspace/_entrypoint.sh
+
+# Use the entrypoint
+ENTRYPOINT ["/workspace/_entrypoint.sh"]
